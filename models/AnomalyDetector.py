@@ -5,8 +5,9 @@ from keras import models, layers
 class AnomalyDetector:
 
     anomaly_q001_3 = 0.0029483
+    normal_q090 = 0.005748231
 
-    def __init__(self, path: str, anomaly_threshold: float = anomaly_q001_3):
+    def __init__(self, path: str, anomaly_threshold: float = normal_q090):
         self.model = models.load_model(path, custom_objects={'LeakyReLU': layers.LeakyReLU})
         self.threshold = anomaly_threshold
 
