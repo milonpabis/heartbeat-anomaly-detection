@@ -14,8 +14,8 @@ HEIGHT = 400
 
 COLORS = [Qt.white, Qt.black, Qt.red, Qt.green, Qt.blue, Qt.yellow, Qt.cyan, Qt.magenta, Qt.gray]
 
-window_size = 500
-height, width = 400, 800
+window_size = 2*864
+height, width = 400, 2*864
 scale_x = width / window_size
 scale_y = height
 
@@ -48,6 +48,7 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         qimage = QImage(IMG_TEST.data, self.l_sub.width(), self.l_sub.height(), 3 * self.l_sub.width(), QImage.Format_RGB888)
 
         self.bt_start.clicked.connect(self.start_signal)
+        self.pushButton.clicked.connect(self.stop_signal)
 
         self.l_sub.setPixmap(QPixmap.fromImage(qimage))
 
@@ -72,7 +73,10 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
 
     def start_signal(self):
-        self.timer.start(10)
+        self.timer.start(3)
+
+    def stop_signal(self):
+        self.timer.stop()
 
 
 
