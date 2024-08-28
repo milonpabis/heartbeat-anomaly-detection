@@ -11,19 +11,20 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-    QMainWindow, QPushButton, QSizePolicy, QVBoxLayout,
-    QWidget)
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(900, 600)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
@@ -52,35 +53,27 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setSpacing(0)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.frame_7 = QFrame(self.frame_4)
-        self.frame_7.setObjectName(u"frame_7")
-        self.frame_7.setFrameShape(QFrame.NoFrame)
-        self.frame_7.setFrameShadow(QFrame.Raised)
-
-        self.horizontalLayout.addWidget(self.frame_7)
-
         self.frame_6 = QFrame(self.frame_4)
         self.frame_6.setObjectName(u"frame_6")
         self.frame_6.setFrameShape(QFrame.NoFrame)
         self.frame_6.setFrameShadow(QFrame.Raised)
-        self.verticalLayout_2 = QVBoxLayout(self.frame_6)
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_4 = QHBoxLayout(self.frame_6)
+        self.horizontalLayout_4.setSpacing(0)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.l_main = QLabel(self.frame_6)
         self.l_main.setObjectName(u"l_main")
+        self.l_main.setMinimumSize(QSize(864, 200))
+        self.l_main.setMaximumSize(QSize(864, 200))
+        self.l_main.setLayoutDirection(Qt.LeftToRight)
+        self.l_main.setStyleSheet(u"background-color: black;")
+        self.l_main.setScaledContents(True)
+        self.l_main.setAlignment(Qt.AlignCenter)
 
-        self.verticalLayout_2.addWidget(self.l_main)
+        self.horizontalLayout_4.addWidget(self.l_main)
 
 
         self.horizontalLayout.addWidget(self.frame_6)
-
-        self.frame_8 = QFrame(self.frame_4)
-        self.frame_8.setObjectName(u"frame_8")
-        self.frame_8.setFrameShape(QFrame.NoFrame)
-        self.frame_8.setFrameShadow(QFrame.Raised)
-
-        self.horizontalLayout.addWidget(self.frame_8)
 
 
         self.verticalLayout.addWidget(self.frame_4)
@@ -110,6 +103,9 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.l_sub = QLabel(self.frame_9)
         self.l_sub.setObjectName(u"l_sub")
+        self.l_sub.setMinimumSize(QSize(432, 100))
+        self.l_sub.setStyleSheet(u"background-color: gray;\n"
+"")
 
         self.verticalLayout_3.addWidget(self.l_sub)
 
@@ -146,6 +142,20 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.frame_3)
 
         MainWindow.setCentralWidget(self.centralwidget)
+        self.menuBar = QMenuBar(MainWindow)
+        self.menuBar.setObjectName(u"menuBar")
+        self.menuBar.setGeometry(QRect(0, 0, 900, 21))
+        self.menuFile = QMenu(self.menuBar)
+        self.menuFile.setObjectName(u"menuFile")
+        self.menuTheme = QMenu(self.menuBar)
+        self.menuTheme.setObjectName(u"menuTheme")
+        self.menuHelp = QMenu(self.menuBar)
+        self.menuHelp.setObjectName(u"menuHelp")
+        MainWindow.setMenuBar(self.menuBar)
+
+        self.menuBar.addAction(self.menuFile.menuAction())
+        self.menuBar.addAction(self.menuTheme.menuAction())
+        self.menuBar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
 
@@ -158,5 +168,8 @@ class Ui_MainWindow(object):
         self.l_sub.setText("")
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
         self.bt_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
+        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
+        self.menuTheme.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
+        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
     # retranslateUi
 
