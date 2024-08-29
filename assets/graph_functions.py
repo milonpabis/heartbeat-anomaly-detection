@@ -82,3 +82,5 @@ def plot_signal(ax, signal: np.array, annot_sample: int, annot_symbol: str, fs=3
     ax.grid()
     
     return ax
+
+

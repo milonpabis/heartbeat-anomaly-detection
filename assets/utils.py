@@ -4,9 +4,14 @@ import wfdb
 import cv2
 
 from assets.transformation_functions import SignalTransformer
+from assets.settings import *
+
+current_signal_frame = np.ones((200, 864, 3), dtype=np.uint8) * 0
+
+transformer = SignalTransformer()
 
 
-def load_full_ecg(path: str, id: str) -> Tuple[np.array, np.array, list]:
+def load_full_ecg(path: str, id: str) -> Tuple[np.ndarray, np.ndarray, list]:
     """
     Loads the full ECG signal with the annotation from the given path and id.
     """
@@ -21,7 +26,7 @@ def load_full_ecg(path: str, id: str) -> Tuple[np.array, np.array, list]:
 
 
 
-def convert_signal_to_image(signal: np.array, peak_idx: int, h: int, w: int, color: tuple = (0, 255, 0)) -> np.array:
+def convert_signal_to_image(signal: np.ndarray, peak_idx: int, h: int, w: int, color: tuple = (0, 255, 0)) -> np.ndarray:
     """
     Converts the given signal to an image.
     """
@@ -36,6 +41,10 @@ def convert_signal_to_image(signal: np.array, peak_idx: int, h: int, w: int, col
         cv2.line(black_image, (i-1, int(h - h * transformed_signal[i-1])), (i, int(h - h * transformed_signal[i])), color, 1)
 
     return cv2.resize(black_image, (w, h), interpolation=cv2.INTER_LINEAR)
+
+
+
+
 
 
 
