@@ -4,14 +4,21 @@ from scipy.signal import find_peaks
 
 from assets.transformation_functions import SignalTransformer
 from assets.settings import *
+from assets.utils import map_to_rgb
+from models.AnomalyDetector import AnomalyDetector
+
+MODEL_DEFAULT = AnomalyDetector("models/final_model.keras")
 
 
 
 class SignalHandler:
 
-    def __init__(self, signal: np.ndarray, transformer: SignalTransformer):
+    def __init__(self, signal: np.ndarray, transformer: SignalTransformer, model: AnomalyDetector = MODEL_DEFAULT):
         self.signal = signal # original full loaded signal
         self.transformer = transformer # function to transform signal
+        self.model = model # model for anomaly detection
+
+        self.run_signal = True # flag for stopping the signal view
 
         self.frame_main = np.ones((HEIGHT, WIDTH, 3), dtype=np.uint8) * 0 # frame for main signal view
         self.signal_view = self.transformer._normalize_signal(self.signal) # signal to be viewed on main frame
@@ -39,38 +46,12 @@ class SignalHandler:
                 cv2.rectangle(self.frame_main, (x1_r, 50), (x2_r, 350), (0, 0, 255), 1)
                 self.find_signal_peaks()
                 self.ii += 1
-
-
-                # ------------------------------
-                        
-                # signal_window = transformer.transform_signal(signal[ii*window_length:(ii+1)*window_length])
-                # peaks = find_peaks(signal_window, height=0.8)[0]
-                        
-                # if len(peaks) > 1 and abs(peaks[0] - peaks[1]) < 10:
-                #     peaks = np.delete(peaks, 1)
-                            
-                # for p in peaks:
-                #     cv2.circle(frame, ((800-window_length)+int(window_length/864*p), 100), radius=2, color=(0, 0, 255), thickness=3)
-                #     peak_idx = ii*window_length+int(window_length/864*p)
-                            
-                #     if peak_idx > 432:
-                #         prediction_window = transformer.transform_signal(np.hstack([signal[peak_idx-432:peak_idx], signal[peak_idx:peak_idx+432]]))
-                #         csf = current_signal_frame.copy()
-                #         #prediction = model.predict(prediction_window) #[2][0]
-                #         #print(prediction[2][0], prediction[1])
-                #         #color = map_to_rgb(prediction[1][0])
-                #         color = (0, 255, 0)
-                #         for oo in range(1, len(prediction_window)):
-                #             cv2.line(csf, (oo-1, int(400 - 400*prediction_window[oo-1])), (oo, int(400 - 400*prediction_window[oo])), color, 1)
-                                
-                #         cv2.imshow("Current Signal Window", csf)
-                        
-                # ii += 1
+       
 
         else:
-            return False, self.frame_main # False - end of the signal
+            self.run_signal = False # False - end of the signal
 
-        return True, self.frame_main
+        self.run_signal = True
     
 
     def find_signal_peaks(self):
@@ -97,12 +78,15 @@ class SignalHandler:
                 if peak_idx > 432: # the half
                     prediction_window = self.transformer.transform_signal(np.hstack([self.signal[peak_idx-432:peak_idx], self.signal[peak_idx:peak_idx+432]]))
                     csf = np.ones((200, 864, 3), dtype=np.uint8) * 0 # frame for sub signal view
-                    #prediction = model.predict(prediction_window) #[2][0]
+                    prediction = self.model.predict(prediction_window) #[2][0]
                     #print(prediction[2][0], prediction[1])
-                    #color = map_to_rgb(prediction[1][0])
-                    color = (0, 255, 0)
+                    color = map_to_rgb(prediction[1][0])
                     for oo in range(1, len(prediction_window)):
                         cv2.line(csf, (oo-1, int(200 - 200*prediction_window[oo-1])), (oo, int(200 - 200*prediction_window[oo])), color, 1)
 
                     self.sub_signal_frame = cv2.resize(csf, (432, 100), interpolation=cv2.INTER_LINEAR)
+
+    
+    def predict_anomaly(self, signal: np.ndarray) -> float:
+        return self.model.predict(signal)
             

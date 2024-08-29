@@ -1,5 +1,6 @@
 import numpy as np
 from keras import models, layers
+from typing import Tuple
 
 
 class AnomalyDetector:
@@ -12,15 +13,15 @@ class AnomalyDetector:
         self.threshold = anomaly_threshold
 
     
-    def predict(self, signal: np.array):
+    def predict(self, signal: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         reconstructed_signal = self.model.predict(self.fix_dimension(signal))
         error = self.calculate_error(signal, reconstructed_signal)
         return (reconstructed_signal, error, (error > self.threshold).astype(int))
 
     
-    def fix_dimension(self, signal: np.array) -> np.array:
+    def fix_dimension(self, signal: np.ndarray) -> np.ndarray:
         return np.atleast_2d(signal)
 
 
-    def calculate_error(self, X_original: np.array, X_reconstructed: np.array) -> np.array:
+    def calculate_error(self, X_original: np.ndarray, X_reconstructed: np.ndarray) -> np.ndarray:
         return np.mean(np.square(X_original - X_reconstructed), axis=1)

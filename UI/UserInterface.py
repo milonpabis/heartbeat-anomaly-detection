@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import QByteArray, QTimer, Qt
+from PySide6.QtCore import QByteArray, QTimer, Qt, QRunnable, Slot, QThreadPool
 from UI.templates.MainWindow import Ui_MainWindow
+
+from concurrent.futures import ThreadPoolExecutor
 
 from assets.utils import load_full_ecg, convert_signal_to_image
 from assets.transformation_functions import SignalTransformer
@@ -36,9 +38,13 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
+        # temp
+        self.gate = True
+
 
         self.signal_handler = SignalHandler(signal_test, transformer) # change to none and load signal later
         self.transformer = SignalTransformer()
+        self.thread_pool = QThreadPool()
         self.frame_main = np.ones((HEIGHT, WIDTH, 3), dtype=np.uint8) * 0
         self.idx = 1
 
@@ -68,7 +74,8 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
     
     def update_main_image(self, image: np.ndarray) -> None:
-        qimage = QImage(image.data, self.l_main.width(), self.l_main.height(), 3 * self.l_main.width(), QImage.Format_RGB888)
+        image_resized = cv2.resize(image, (self.l_main.width(), self.l_main.height()), interpolation=cv2.INTER_LINEAR)
+        qimage = QImage(image_resized.data, self.l_main.width(), self.l_main.height(), 3 * self.l_main.width(), QImage.Format_RGB888)
         self.l_main.setPixmap(QPixmap.fromImage(qimage))
 
     
@@ -100,9 +107,11 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
     def update_TEST(self):
 
-        gate, frame = self.signal_handler.update_signal_frame(self.idx)
-        self.update_main_image(cv2.resize(frame, (self.l_main.width(), self.l_main.height()), interpolation=cv2.INTER_LINEAR))
-        if not gate:
+        #self.signal_handler.update_signal_frame(self.idx)
+        self.start_computation()
+        self.update_main_image(self.signal_handler.frame_main)
+
+        if not self.check_signal_status():
             self.timer.stop()
         
         if self.signal_handler.sub_signal_frame is not None:
@@ -110,5 +119,27 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.idx += 1
 
 
+    def check_signal_status(self) -> bool:
+        return self.signal_handler.run_signal
+    
+
+    #temp
+    def start_computation(self):
+        worker = ComputationTask(self.signal_handler, self.idx)
+        self.thread_pool.start(worker)
 
 
+
+
+
+class ComputationTask(QRunnable):
+    def __init__(self, c_object: SignalHandler, idx: int):
+        super().__init__()
+        self.c_object = c_object
+        self.idx = idx
+
+    @Slot()
+    def run(self):
+        # Wykonaj obliczenie w tle
+        self.c_object.update_signal_frame(self.idx)
+        # Przekaż wynik do callback

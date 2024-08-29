@@ -43,6 +43,23 @@ def convert_signal_to_image(signal: np.ndarray, peak_idx: int, h: int, w: int, c
     return cv2.resize(black_image, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
+def map_to_rgb(value) -> Tuple[int, int, int]: # primitive version
+    # normalization
+    t = value / 0.015
+    
+    if t <= 0.5:
+        # interpolation between green (0, 255, 0) and orange (255, 165, 0)
+        r = int(2 * t * 255)
+        g = int(255 - (90 * 2 * t))
+        b = 0
+    else:
+        # interpolation between orange (255, 165, 0) and red (255, 0, 0)
+        t = (t - 0.5) * 2  # normalization
+        r = 255
+        g = int(165 - (165 * t))
+        b = 0
+    
+    return (b, g, r)
 
 
 
