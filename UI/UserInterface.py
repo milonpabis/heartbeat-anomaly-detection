@@ -4,6 +4,7 @@ from PySide6.QtCore import QByteArray, QTimer, Qt, QRunnable, Slot, QThreadPool
 from UI.templates.MainWindow import Ui_MainWindow
 
 from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 
 from assets.utils import load_full_ecg, convert_signal_to_image
 from assets.transformation_functions import SignalTransformer
@@ -19,14 +20,14 @@ height, width = 400, 2*864
 scale_x = width / window_size
 scale_y = height
 
-signal_test = load_full_ecg("data/arrythmia_rates/", "103")[0]
+signal_test = load_full_ecg("data/arrythmia_rates/", "119")[0]
 
 transformer = SignalTransformer()
 
 frame = np.ones((height, width, 3), dtype=np.uint8) * 0  # 3 kanały dla BGR
 signal_tt = transformer._normalize_signal(signal_test)
 
-
+LOCK = Lock()
 
 
 
@@ -41,8 +42,10 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         # temp
         self.gate = True
 
+        self.lock = Lock()
 
-        self.signal_handler = SignalHandler(signal_test, transformer) # change to none and load signal later
+
+        self.signal_handler = SignalHandler(signal_test, transformer, self.lock) # change to none and load signal later
         self.transformer = SignalTransformer()
         self.thread_pool = QThreadPool()
         self.frame_main = np.ones((HEIGHT, WIDTH, 3), dtype=np.uint8) * 0
@@ -50,26 +53,31 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
         # delete later - load_signal
 
-        self.signal = load_full_ecg("data/arrythmia_rates/", "103")[0]
+        self.signal = load_full_ecg("data/arrythmia_rates/", "111")[0]
         self.signal_view = self.transformer._normalize_signal(self.signal)
 
         #self.signal = None
         #self.signal_view = None
         
-        
 
-        IMG_TEST = load_full_ecg("data/arrythmia_rates/", "100")
-        IMG_TEST = convert_signal_to_image(IMG_TEST[0], IMG_TEST[1][5], self.l_sub.height(), self.l_sub.width())
+        #IMG_TEST = load_full_ecg("data/arrythmia_rates/", "100")
+        #IMG_TEST = convert_signal_to_image(IMG_TEST[0], IMG_TEST[1][5], self.l_sub.height(), self.l_sub.width())
 
-        qimage = QImage(IMG_TEST.data, self.l_sub.width(), self.l_sub.height(), 3 * self.l_sub.width(), QImage.Format_RGB888)
+        #qimage = QImage(IMG_TEST.data, self.l_sub.width(), self.l_sub.height(), 3 * self.l_sub.width(), QImage.Format_RGB888)
+        #self.l_sub.setPixmap(QPixmap.fromImage(qimage))
+
 
         self.bt_start.clicked.connect(self.start_signal)
         self.pushButton.clicked.connect(self.stop_signal)
 
-        self.l_sub.setPixmap(QPixmap.fromImage(qimage))
+        
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_TEST)
+
+        self.checkbox_analysis.clicked.connect(self.toggle_analysis)
+        self.frame_advanced_options.hide()
+        self.bt_advanced_options.clicked.connect(self.toggle_advanced_options)
         
 
     
@@ -90,7 +98,7 @@ class UserInterface(QMainWindow, Ui_MainWindow):
     def load_signal(self, signal_path: str, idx: str):
         self.signal = load_full_ecg(signal_path, idx)[0]
 
-        signal_test = load_full_ecg("data/arrythmia_rates/", "103")[0]
+        signal_test = load_full_ecg("data/arrythmia_rates/", "111")[0]
 
         self.signal_view = self.transformer._normalize_signal(signal_test)
 
@@ -109,7 +117,9 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
         #self.signal_handler.update_signal_frame(self.idx)
         self.start_computation()
-        self.update_main_image(self.signal_handler.frame_main)
+        with self.lock:
+            self.update_main_image(self.signal_handler.get_signal_frame())
+
 
         if not self.check_signal_status():
             self.timer.stop()
@@ -127,6 +137,18 @@ class UserInterface(QMainWindow, Ui_MainWindow):
     def start_computation(self):
         worker = ComputationTask(self.signal_handler, self.idx)
         self.thread_pool.start(worker)
+
+    
+    def toggle_analysis(self):
+        self.signal_handler.toggle_analysis()
+
+
+    def toggle_advanced_options(self):
+        if self.frame_advanced_options.isHidden():
+            self.frame_advanced_options.show()
+        else:
+            self.frame_advanced_options.hide()
+
 
 
 

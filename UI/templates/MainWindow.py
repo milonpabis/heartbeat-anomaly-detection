@@ -16,9 +16,9 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QHBoxLayout,
+    QLabel, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QSizePolicy, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -27,6 +27,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(900, 600)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
+        self.centralwidget.setMinimumSize(QSize(900, 0))
         self.verticalLayout = QVBoxLayout(self.centralwidget)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -55,12 +56,15 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.frame_6 = QFrame(self.frame_4)
         self.frame_6.setObjectName(u"frame_6")
+        self.frame_6.setStyleSheet(u"background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.913, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 180));\n"
+"\n"
+"")
         self.frame_6.setFrameShape(QFrame.NoFrame)
         self.frame_6.setFrameShadow(QFrame.Raised)
         self.horizontalLayout_4 = QHBoxLayout(self.frame_6)
         self.horizontalLayout_4.setSpacing(0)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_4.setContentsMargins(0, 15, 0, 15)
         self.l_main = QLabel(self.frame_6)
         self.l_main.setObjectName(u"l_main")
         self.l_main.setMinimumSize(QSize(864, 200))
@@ -90,21 +94,42 @@ class Ui_MainWindow(object):
         self.frame_10.setObjectName(u"frame_10")
         self.frame_10.setFrameShape(QFrame.NoFrame)
         self.frame_10.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_2 = QVBoxLayout(self.frame_10)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.frame_advanced_options = QFrame(self.frame_10)
+        self.frame_advanced_options.setObjectName(u"frame_advanced_options")
+        self.frame_advanced_options.setStyleSheet(u"")
+        self.frame_advanced_options.setFrameShape(QFrame.StyledPanel)
+        self.frame_advanced_options.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_4 = QVBoxLayout(self.frame_advanced_options)
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.checkbox_analysis = QCheckBox(self.frame_advanced_options)
+        self.checkbox_analysis.setObjectName(u"checkbox_analysis")
+        self.checkbox_analysis.setChecked(True)
+
+        self.verticalLayout_4.addWidget(self.checkbox_analysis)
+
+
+        self.verticalLayout_2.addWidget(self.frame_advanced_options)
+
 
         self.horizontalLayout_2.addWidget(self.frame_10)
 
         self.frame_9 = QFrame(self.frame_2)
         self.frame_9.setObjectName(u"frame_9")
+        self.frame_9.setStyleSheet(u"background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.913, fx:0.5, fy:0.5, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(255, 255, 255, 180));\n"
+"")
         self.frame_9.setFrameShape(QFrame.NoFrame)
         self.frame_9.setFrameShadow(QFrame.Raised)
         self.verticalLayout_3 = QVBoxLayout(self.frame_9)
         self.verticalLayout_3.setSpacing(0)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_3.setContentsMargins(3, 3, 3, 3)
         self.l_sub = QLabel(self.frame_9)
         self.l_sub.setObjectName(u"l_sub")
         self.l_sub.setMinimumSize(QSize(432, 100))
-        self.l_sub.setStyleSheet(u"background-color: gray;\n"
+        self.l_sub.setMaximumSize(QSize(432, 100))
+        self.l_sub.setStyleSheet(u"background-color: black;\n"
 "")
 
         self.verticalLayout_3.addWidget(self.l_sub)
@@ -116,6 +141,15 @@ class Ui_MainWindow(object):
         self.frame_11.setObjectName(u"frame_11")
         self.frame_11.setFrameShape(QFrame.NoFrame)
         self.frame_11.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_5 = QVBoxLayout(self.frame_11)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.verticalLayout_5.setContentsMargins(-1, 70, -1, -1)
+        self.bt_advanced_options = QPushButton(self.frame_11)
+        self.bt_advanced_options.setObjectName(u"bt_advanced_options")
+        self.bt_advanced_options.setCheckable(True)
+
+        self.verticalLayout_5.addWidget(self.bt_advanced_options)
+
 
         self.horizontalLayout_2.addWidget(self.frame_11)
 
@@ -165,7 +199,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.l_main.setText("")
+        self.checkbox_analysis.setText(QCoreApplication.translate("MainWindow", u"Analysis Mode", None))
         self.l_sub.setText("")
+        self.bt_advanced_options.setText(QCoreApplication.translate("MainWindow", u"Advanced Options", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
         self.bt_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))

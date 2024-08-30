@@ -14,7 +14,7 @@ class AnomalyDetector:
 
     
     def predict(self, signal: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        reconstructed_signal = self.model.predict(self.fix_dimension(signal))
+        reconstructed_signal = self.model.predict(self.fix_dimension(signal), verbose=0)
         error = self.calculate_error(signal, reconstructed_signal)
         return (reconstructed_signal, error, (error > self.threshold).astype(int))
 

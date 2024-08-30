@@ -1,6 +1,9 @@
 import numpy as np
 import cv2
 from scipy.signal import find_peaks
+from datetime import datetime
+from PySide6.QtCore import QMutex
+import threading
 
 from assets.transformation_functions import SignalTransformer
 from assets.settings import *
@@ -13,10 +16,12 @@ MODEL_DEFAULT = AnomalyDetector("models/final_model.keras")
 
 class SignalHandler:
 
-    def __init__(self, signal: np.ndarray, transformer: SignalTransformer, model: AnomalyDetector = MODEL_DEFAULT):
+    def __init__(self, signal: np.ndarray, transformer: SignalTransformer, lock: threading.Lock, model: AnomalyDetector = MODEL_DEFAULT):
         self.signal = signal # original full loaded signal
         self.transformer = transformer # function to transform signal
         self.model = model # model for anomaly detection
+        self.lock = lock
+        self.analysis_mode = True # flag for analysis mode
 
         self.run_signal = True # flag for stopping the signal view
 
@@ -28,30 +33,40 @@ class SignalHandler:
         self.ii = 0 # index for window analysis
 
 
+
     
     def update_signal_frame(self, idx: int) -> np.ndarray:
-        if idx < len(self.signal_view):
+            if idx < len(self.signal_view):
+                with self.lock:
+                
+                    self.frame_main[:, :-int(SCALE_X)] = self.frame_main[:, int(SCALE_X):]  # sliding window
+                    self.frame_main[:, -int(SCALE_X):] = 0 # filling new space with black
 
-            self.frame_main[:, :-int(SCALE_X)] = self.frame_main[:, int(SCALE_X):]  # sliding window
-            self.frame_main[:, -int(SCALE_X):] = 0 # filling new space with black
+                    y1 = int(SCALE_Y - self.signal_view[idx-1] * SCALE_Y) # drawing the signal
+                    y2 = int(SCALE_Y - self.signal_view[idx] * SCALE_Y)
+                    cv2.line(self.frame_main, (WIDTH - 1, y1), (WIDTH - 1, y2), (11, 212, 11), 1)
 
-            y1 = int(SCALE_Y - self.signal_view[idx-1] * SCALE_Y) # drawing the signal
-            y2 = int(SCALE_Y - self.signal_view[idx] * SCALE_Y)
-            cv2.line(self.frame_main, (WIDTH - 1, y1), (WIDTH - 1, y2), (11, 212, 11), 1)
 
-            # drawing rectangles in the analysis area, finding peaks and drawing them
-            if (idx > self.window_length and idx % self.window_length == 0) or (idx == self.window_length): # 
-                x1_r = WIDTH - self.window_length
-                x2_r = WIDTH - 1
-                cv2.rectangle(self.frame_main, (x1_r, 50), (x2_r, 350), (0, 0, 255), 1)
-                self.find_signal_peaks()
-                self.ii += 1
-       
 
-        else:
-            self.run_signal = False # False - end of the signal
 
-        self.run_signal = True
+                # drawing rectangles in the analysis area, finding peaks and drawing them
+                if (idx > self.window_length and idx % self.window_length == 0) or (idx == self.window_length): # 
+                    if self.analysis_mode:
+                        x1_r = WIDTH - self.window_length
+                        x2_r = WIDTH - 1
+                        cv2.rectangle(self.frame_main, (x1_r, 50), (x2_r, 350), (0, 0, 255), 1)
+
+                    self.find_signal_peaks()
+                    self.ii += 1
+            
+        
+                self.run_signal = True # True - continue the signal
+
+            else:
+                self.run_signal = False # False - end of the signal
+            
+            
+
     
 
     def find_signal_peaks(self):
@@ -61,16 +76,20 @@ class SignalHandler:
                         
         if len(peaks) > 1 and abs(peaks[0] - peaks[1]) < 10: # bugs were here so temporary solution
             peaks = np.delete(peaks, 1)
-                            
-        for p in peaks: # drawing every peak, taking into account the relative window position on the main frame
-            cv2.circle(self.frame_main, ((WIDTH-self.window_length) + int(self.window_length / 864 * p), 100), radius=2, color=(0, 0, 255), thickness=3)
 
-        self.update_sub_frame(peaks)
+        if self.analysis_mode:
+            for p in peaks:
+                cv2.circle(self.frame_main, ((WIDTH-self.window_length) + int(self.window_length / 864 * p), 100), radius=2, color=(0, 0, 255), thickness=3)
+
+        self.make_predictions(peaks)
+        
 
 
     
-    def update_sub_frame(self, peaks: np.ndarray) -> np.ndarray:
+    def make_predictions(self, peaks: np.ndarray) -> np.ndarray:
+        start_time = datetime.now()
         if len(peaks) > 0:
+            peaks_results = []
 
             for p in peaks:
                 peak_idx = self.ii * self.window_length + int(self.window_length / 864 * p) # index of the peak in the full signal
@@ -79,14 +98,33 @@ class SignalHandler:
                     prediction_window = self.transformer.transform_signal(np.hstack([self.signal[peak_idx-432:peak_idx], self.signal[peak_idx:peak_idx+432]]))
                     csf = np.ones((200, 864, 3), dtype=np.uint8) * 0 # frame for sub signal view
                     prediction = self.model.predict(prediction_window) #[2][0]
-                    #print(prediction[2][0], prediction[1])
+
                     color = map_to_rgb(prediction[1][0])
-                    for oo in range(1, len(prediction_window)):
+                    peaks_results.append((p, color))
+
+                    for oo in range(1, len(prediction_window)): # drawing the sub window
                         cv2.line(csf, (oo-1, int(200 - 200*prediction_window[oo-1])), (oo, int(200 - 200*prediction_window[oo])), color, 1)
 
                     self.sub_signal_frame = cv2.resize(csf, (432, 100), interpolation=cv2.INTER_LINEAR)
+            
+            end_time = datetime.now()
+            delay = (end_time-start_time).microseconds//1000/3
+            
+            with self.lock:
+                for p, c in peaks_results: # drawing every peak, taking into account the relative window position on the main frame
+                    x_mid = (WIDTH-self.window_length-int(delay)) + int(self.window_length / 864 * p)
+                    cv2.circle(self.frame_main, (x_mid, 100), radius=4, color=c, thickness=3)
+                    cv2.line(self.frame_main, (x_mid-25, 10), (x_mid+25, 10), c, 2)
 
     
     def predict_anomaly(self, signal: np.ndarray) -> float:
         return self.model.predict(signal)
+    
+
+    def get_signal_frame(self) -> np.ndarray:
+        return self.frame_main
+    
+
+    def toggle_analysis(self):
+        self.analysis_mode = not self.analysis_mode
             

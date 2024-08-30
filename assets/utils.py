@@ -59,7 +59,7 @@ def map_to_rgb(value) -> Tuple[int, int, int]: # primitive version
         g = int(165 - (165 * t))
         b = 0
     
-    return (b, g, r)
+    return (r, g, b)
 
 
 
