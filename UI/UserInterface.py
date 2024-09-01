@@ -24,7 +24,7 @@ signal_test = load_full_ecg("data/arrythmia_rates/", "119")[0]
 
 transformer = SignalTransformer()
 
-frame = np.ones((height, width, 3), dtype=np.uint8) * 0  # 3 kanały dla BGR
+frame = np.ones((height, width, 3), dtype=np.uint8) * 0
 signal_tt = transformer._normalize_signal(signal_test)
 
 LOCK = Lock()
