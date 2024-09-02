@@ -1,14 +1,19 @@
 import numpy as np
-from typing import Tuple, Union
+from typing import Tuple
 import wfdb
 import cv2
 
 from assets.transformation_functions import SignalTransformer
 from assets.settings import *
 
-current_signal_frame = np.ones((200, 864, 3), dtype=np.uint8) * 0
 
-transformer = SignalTransformer()
+COLORS = {"White": (255, 255, 255), 
+          "Red": (255, 0, 0), 
+          "Green": (0, 255, 0), 
+          "Blue": (0, 0, 255), 
+          "Yellow": (255, 255, 0), 
+          "Cyan": (0, 255, 255), 
+          "Magenta": (255, 0, 255)}
 
 
 def load_full_ecg(path: str, id: str) -> Tuple[np.ndarray, np.ndarray, list]:
@@ -43,6 +48,7 @@ def convert_signal_to_image(signal: np.ndarray, peak_idx: int, h: int, w: int, c
     return cv2.resize(black_image, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
+
 def map_to_rgb(value) -> Tuple[int, int, int]: # primitive version
     # normalization
     t = value / 0.015
@@ -60,25 +66,3 @@ def map_to_rgb(value) -> Tuple[int, int, int]: # primitive version
         b = 0
     
     return (r, g, b)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# if __name__ == "__main__":
-#     signal, ann_sample, ann_symbol = load_full_ecg("data/arrythmia_rates/", "100")
-
-#     image = convert_signal_to_image(signal, ann_sample[5], 300, 432)
-
-#     cv2.imshow("ECG Signal", image)
-#     cv2.waitKey(0)
-#     cv2.destroyAllWindows

@@ -57,9 +57,10 @@ class SignalHandler:
             
             
 
-    def find_signal_peaks(self, threshold: float = 0.8) -> None:
+    def find_signal_peaks(self) -> None:
         # transforming only the analysis window
         signal_window = self.transformer.transform_signal(self.signal[self.ii*self.window_length:(self.ii+1)*self.window_length])
+        threshold = self.user_settings.peak_finding_threshold
         peaks = find_peaks(signal_window, height=threshold)[0]
                         
         if len(peaks) > 1 and abs(peaks[0] - peaks[1]) < 10: # bugs were here so temporary solution
@@ -123,14 +124,7 @@ class SignalHandler:
         except ValueError:
             pass
 
-
-    def set_analyze_window_length(self, length: int) -> None:
-        try:
-            self.user_settings.set_analyze_window_length(length)
-        except ValueError:
-            pass
     
-
     def set_peak_finding_threshold(self, threshold: float) -> None:
         try:    
             self.user_settings.set_peak_finding_threshold(threshold)

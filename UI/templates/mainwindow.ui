@@ -532,6 +532,18 @@ border: 1px solid white;
                    </item>
                    <item>
                     <widget class="QSlider" name="slider_fill_percentage">
+                     <property name="maximum">
+                      <number>100</number>
+                     </property>
+                     <property name="singleStep">
+                      <number>50</number>
+                     </property>
+                     <property name="pageStep">
+                      <number>50</number>
+                     </property>
+                     <property name="sliderPosition">
+                      <number>100</number>
+                     </property>
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>

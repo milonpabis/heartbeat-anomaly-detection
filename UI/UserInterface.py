@@ -6,7 +6,7 @@ from UI.templates.MainWindow import Ui_MainWindow
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
-from assets.utils import load_full_ecg, convert_signal_to_image
+from assets.utils import *
 from assets.transformation_functions import SignalTransformer
 from assets.settings import *
 from assets.SignalHandler import SignalHandler
@@ -39,16 +39,14 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
-        # temp
-        self.gate = True
-
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_TEST)
         self.lock = Lock()
-
-
         self.signal_handler = SignalHandler(signal_test, transformer, self.lock) # change to none and load signal later
         self.transformer = SignalTransformer()
         self.thread_pool = QThreadPool()
         self.frame_main = np.ones((HEIGHT, WIDTH, 3), dtype=np.uint8) * 0
+
         self.idx = 1
 
         # delete later - load_signal
@@ -63,9 +61,7 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.checkbox_analysis.setChecked(self.signal_handler._get_analyze_state())
 
         
-
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_TEST)
+        
 
         self.checkbox_analysis.clicked.connect(self.toggle_analysis)
         self.frame_advanced_options.hide()
@@ -73,18 +69,13 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.bt_advanced_options.clicked.connect(self.toggle_advanced_options)
         self.bt_style_options.clicked.connect(self.toggle_style_options)
 
-        self.slider_anomaly_threshold.setTickInterval(1)
-        self.slider_anomaly_threshold.setMinimum(-10)
-        self.slider_anomaly_threshold.setMaximum(10)
-        self.slider_anomaly_threshold.setValue(0)
-        self.slider_anomaly_threshold.valueChanged.connect(self.update_anomaly_threshold)
+        self.__initialize_slider_anomaly_threshold()
+        self.__initialize_slider_fill_percentage()
+        self.__initialize_slider_peak_threshold()
+        self.__initialize_slider_window_length()
 
-
-        self.slider_fill_percentage.setTickInterval(50)
-        self.slider_fill_percentage.setMinimum(0)
-        self.slider_fill_percentage.setMaximum(100)
-        self.slider_fill_percentage.setValue(100)
-        self.slider_fill_percentage.valueChanged.connect(self.update_fill_percentage)
+        self.cb_analysis_color.addItems([*COLORS.keys()])
+        self.cb_analysis_color.currentIndexChanged.connect(self.update_analysis_color)
     
         
 
@@ -170,7 +161,70 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
 
     def update_fill_percentage(self, value: int):
-        self.signal_handler.set_sub_frame_fill_percentage(value)
+        new_value = self.__cut_the_value(50, value)
+        self.slider_fill_percentage.setValue(new_value)
+        self.signal_handler.set_sub_frame_fill_percentage(new_value)
+
+    
+    def update_analysis_color(self, *args):
+        color = COLORS[self.cb_analysis_color.currentText()]
+        self.signal_handler.set_analyze_mode_color(color)
+
+    
+    def update_peak_threshold(self, value: float):
+        new_threshold = self.__cut_the_value(5, value)
+        self.slider_peak_threshold.setValue(new_threshold)
+        self.signal_handler.set_peak_finding_threshold(new_threshold)
+
+    
+    def update_window_length(self, value: int):
+        new_length = self.__cut_the_value(FRAME_SIZE // 4, value)
+        self.slider_window_length.setValue(new_length)
+        self.signal_handler.set_analyze_window_length(new_length)
+
+
+
+    def __initialize_slider_fill_percentage(self):
+        self.slider_fill_percentage.setSingleStep(50)
+        self.slider_fill_percentage.setMinimum(0)
+        self.slider_fill_percentage.setMaximum(100)
+        self.slider_fill_percentage.setValue(100)
+        self.slider_fill_percentage.valueChanged.connect(self.update_fill_percentage)
+
+    
+    def __initialize_slider_anomaly_threshold(self):
+        self.slider_anomaly_threshold.setSingleStep(1)
+        self.slider_anomaly_threshold.setMinimum(-10)
+        self.slider_anomaly_threshold.setMaximum(10)
+        self.slider_anomaly_threshold.setValue(0)
+        self.slider_anomaly_threshold.valueChanged.connect(self.update_anomaly_threshold)
+
+
+    def __initialize_slider_peak_threshold(self):
+        self.slider_peak_threshold.setSingleStep(5)
+        self.slider_peak_threshold.setMinimum(60)
+        self.slider_peak_threshold.setMaximum(95)
+        self.slider_peak_threshold.setValue(80)
+        self.slider_peak_threshold.valueChanged.connect(self.update_peak_threshold)
+
+    
+    def __initialize_slider_window_length(self):
+        self.slider_window_length.setSingleStep(FRAME_SIZE // 4)
+        self.slider_window_length.setMinimum(FRAME_SIZE // 4)
+        self.slider_window_length.setMaximum(FRAME_SIZE)
+        self.slider_window_length.setValue(FRAME_SIZE // 2)
+        self.slider_window_length.valueChanged.connect(self.update_window_length)
+
+    
+    def __cut_the_value(self, step: int, value: int) -> int:
+        if value % step <= step // 2:
+            return value - value % step
+        else:
+            return value + step - value % step
+
+
+    
+
 
     
 
