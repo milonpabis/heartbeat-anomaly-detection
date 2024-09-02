@@ -2,13 +2,16 @@ import numpy as np
 import cv2
 from scipy.signal import find_peaks
 from time import perf_counter
+from datetime import datetime
 import threading
 from typing import Tuple, List
 
 from assets.transformation_functions import SignalTransformer
+from assets.UserSettings import UserSettings
 from assets.settings import *
 from assets.utils import map_to_rgb
 from models.AnomalyDetector import AnomalyDetector
+
 
 MODEL_DEFAULT = AnomalyDetector("models/final_model.keras")
 
@@ -17,11 +20,11 @@ MODEL_DEFAULT = AnomalyDetector("models/final_model.keras")
 class SignalHandler:
 
     def __init__(self, signal: np.ndarray, transformer: SignalTransformer, lock: threading.Lock, model: AnomalyDetector = MODEL_DEFAULT):
+        self.user_settings = UserSettings()
         self.signal = signal # original full loaded signal
         self.transformer = transformer # function to transform signal
         self.model = model # model for anomaly detection
-        self.lock = lock
-        self.analysis_mode = True # flag for analysis mode
+        self.lock = lock # lock for threading
 
         self.run_signal = True # flag for stopping the signal view
 
@@ -42,7 +45,7 @@ class SignalHandler:
 
                 # drawing rectangles in the analysis area, finding peaks and drawing them
                 if (idx > self.window_length and idx % self.window_length == 0) or (idx == self.window_length): # 
-                    if self.analysis_mode:
+                    if self._get_analyze_state():
                         self._draw_peak_search_area()
 
                     self.find_signal_peaks()
@@ -62,7 +65,7 @@ class SignalHandler:
         if len(peaks) > 1 and abs(peaks[0] - peaks[1]) < 10: # bugs were here so temporary solution
             peaks = np.delete(peaks, 1)
 
-        if self.analysis_mode:
+        if self._get_analyze_state():
             self._draw_found_peaks(peaks)
 
         self.make_predictions(peaks)
@@ -71,7 +74,7 @@ class SignalHandler:
 
     
     def make_predictions(self, peaks: np.ndarray) -> np.ndarray:
-        start_time = perf_counter()
+        start_time = datetime.now()
         if len(peaks) > 0:
             peaks_results = []
 
@@ -81,7 +84,7 @@ class SignalHandler:
                 if peak_idx > FRAME_SIZE // 2: # the half
                     prediction_window = self.transformer.transform_signal(np.hstack([self.signal[peak_idx-432:peak_idx], self.signal[peak_idx:peak_idx+432]]))
                     csf = np.ones((200, FRAME_SIZE, 3), dtype=np.uint8) * 0 # frame for sub signal view
-                    prediction = self.model.predict(prediction_window)
+                    prediction = self.predict_anomaly(prediction_window)
 
                     color = map_to_rgb(prediction[1][0])
                     peaks_results.append((p, color))
@@ -91,8 +94,8 @@ class SignalHandler:
                     self.sub_signal_frame = cv2.resize(csf, (432, 100), interpolation=cv2.INTER_LINEAR)
             
 
-            end_time = perf_counter()
-            delay = (end_time-start_time) * 1000 / 3
+            end_time = datetime.now()
+            delay = (end_time-start_time).microseconds / 1000 / 3
             
             with self.lock:
                 self._draw_annotations(peaks_results, delay)
@@ -100,7 +103,7 @@ class SignalHandler:
     
 
     def predict_anomaly(self, signal: np.ndarray) -> float:
-        return self.model.predict(signal)
+        return self.model.predict(signal, self.user_settings.anomaly_threshold)
     
 
 
@@ -110,7 +113,47 @@ class SignalHandler:
 
 
     def toggle_analysis(self):
-        self.analysis_mode = not self.analysis_mode
+        self.user_settings.set_analyze_mode(not self._get_analyze_state())
+
+
+
+    def set_model_threshold(self, threshold: float) -> None:
+        try:
+            self.user_settings.set_anomaly_threshold(threshold)
+        except ValueError:
+            pass
+
+
+    def set_analyze_window_length(self, length: int) -> None:
+        try:
+            self.user_settings.set_analyze_window_length(length)
+        except ValueError:
+            pass
+    
+
+    def set_peak_finding_threshold(self, threshold: float) -> None:
+        try:    
+            self.user_settings.set_peak_finding_threshold(threshold)
+        except ValueError:
+            pass
+    
+
+    def set_sub_frame_fill_percentage(self, percentage: int) -> None:
+        try:    
+            self.user_settings.set_sub_frame_fill_percentage(percentage)
+        except ValueError:
+            pass
+    
+
+    def set_analyze_mode_color(self, color: Tuple[int, int, int]) -> None:
+        try:    
+            self.user_settings.set_analyze_mode_color(color)
+        except ValueError:
+            pass
+
+
+
+
 
 
 
@@ -124,14 +167,17 @@ class SignalHandler:
 
     
 
-    def _draw_peak_search_area(self, h_bound: Tuple[int, int] = (50, 350), color: Tuple[int, int, int] = (0, 0, 255)) -> None:
+    def _draw_peak_search_area(self, h_bound: Tuple[int, int] = (50, 350)) -> None:
         x1_r = WIDTH - self.window_length
         x2_r = WIDTH - 1
+        color = self.user_settings.analyze_mode_color
+
         cv2.rectangle(self.frame_main, (x1_r, h_bound[0]), (x2_r, h_bound[1]), color, 1)
 
     
 
-    def _draw_found_peaks(self, peaks: np.ndarray, color: Tuple[int, int, int] = (0, 0, 255)) -> None:
+    def _draw_found_peaks(self, peaks: np.ndarray) -> None:
+        color = self.user_settings.analyze_mode_color
         for p in peaks:
             cv2.circle(self.frame_main, (WIDTH - self.window_length + int(self.window_length / 864 * p), 100), radius=2, color=color, thickness=3)
 
@@ -140,9 +186,9 @@ class SignalHandler:
     def _draw_sub_frame(self, pixmap: np.ndarray, signal_window: np.ndarray, predicted_signal: np.ndarray, color: Tuple[int, int, int] = (0, 0, 255)) -> None:
         h, w = pixmap.shape[:2]
         for i in range(1, w): # drawing the sub window
-            cv2.line(pixmap, (i-1, int(h - h*signal_window[i-1])), (i, int(h - h*signal_window[i])), color, 1)
+            cv2.line(pixmap, (i-1, int(h - h*signal_window[i-1])), (i, int(h - h*signal_window[i])), color, 2)
 
-        if self.analysis_mode:
+        if self._get_analyze_state():
             self._draw_sub_frame_analysis(pixmap, signal_window, predicted_signal, color)
 
 
@@ -150,8 +196,14 @@ class SignalHandler:
     def _draw_sub_frame_analysis(self, pixmap: np.ndarray, signal_window: np.ndarray, predicted_signal: np.ndarray, color: Tuple[int, int, int] = (255, 255, 255)) -> None: 
         h, w = pixmap.shape[:2]
         for i in range(1, w): # drawing the prediction
-            cv2.line(pixmap, (i-1, int(200 - 200*predicted_signal[i-1])), (i, int(h - h*predicted_signal[i])), color, 1)
-            if i % 5 == 0:
+            cv2.line(pixmap, (i-1, int(200 - 200*predicted_signal[i-1])), (i, int(h - h*predicted_signal[i])), color, 2)
+            if self.user_settings.sub_frame_fill_percentage == 0:
+                modulo_val = w
+            elif self.user_settings.sub_frame_fill_percentage == 100:
+                modulo_val = 1
+            else:
+                modulo_val = 2
+            if i % modulo_val == 0:
                 cv2.line(pixmap, (i, int(200 - 200*predicted_signal[i-1])), (i, int(h - h*signal_window[i])), color, 1)
 
     
@@ -161,3 +213,10 @@ class SignalHandler:
             x_mid = (WIDTH-self.window_length-int(delay)) + int(self.window_length / 864 * p)
             cv2.circle(self.frame_main, (x_mid, 100), radius=4, color=c, thickness=3)
             cv2.line(self.frame_main, (x_mid-25, 10), (x_mid+25, 10), c, 2)
+
+
+    def _get_analyze_state(self):
+        return self.user_settings.analyze_mode
+    
+    
+    
