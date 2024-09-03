@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 from scipy.signal import find_peaks
-from time import perf_counter
 from datetime import datetime
 import threading
 from typing import Tuple, List
@@ -92,7 +91,7 @@ class SignalHandler:
 
                     self._draw_sub_frame(csf, prediction_window, prediction[0][0], color) # drawing the sub window
 
-                    self.sub_signal_frame = cv2.resize(csf, (432, 100), interpolation=cv2.INTER_LINEAR)
+                    self.sub_signal_frame = cv2.resize(csf, SUB_WINDOW_SHAPE, interpolation=cv2.INTER_LINEAR)
             
 
             end_time = datetime.now()

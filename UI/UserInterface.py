@@ -1,9 +1,8 @@
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import QByteArray, QTimer, Qt, QRunnable, Slot, QThreadPool
+from PySide6.QtCore import QTimer, QRunnable, Slot, QThreadPool
 from UI.templates.MainWindow import Ui_MainWindow
 
-from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 
 from assets.utils import *
@@ -15,22 +14,6 @@ import numpy as np
 import cv2
 
 
-window_size = 2*864
-height, width = 400, 2*864
-scale_x = width / window_size
-scale_y = height
-
-signal_test = load_full_ecg("data/arrythmia_rates/", "119")[0]
-
-transformer = SignalTransformer()
-
-frame = np.ones((height, width, 3), dtype=np.uint8) * 0
-signal_tt = transformer._normalize_signal(signal_test)
-
-LOCK = Lock()
-
-
-
 
 class UserInterface(QMainWindow, Ui_MainWindow):
 
@@ -40,87 +23,30 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_TEST)
+        self.timer.timeout.connect(self.loop_handler)
         self.lock = Lock()
-        self.signal_handler = SignalHandler(signal_test, transformer, self.lock) # change to none and load signal later
+        self.signal_handler = None
         self.transformer = SignalTransformer()
         self.thread_pool = QThreadPool()
         self.frame_main = np.ones((HEIGHT, WIDTH, 3), dtype=np.uint8) * 0
 
-        self.idx = 1
+        self.idx = 1 # frame number
 
-        # delete later - load_signal
-
-        self.signal = load_full_ecg("data/arrythmia_rates/", "111")[0]
-        self.signal_view = self.transformer._normalize_signal(self.signal)
-
-
-        self.bt_start.clicked.connect(self.start_signal)
-        self.bt_stop.clicked.connect(self.stop_signal)
-
-        self.checkbox_analysis.setChecked(self.signal_handler._get_analyze_state())
-
-        
-        
-
-        self.checkbox_analysis.clicked.connect(self.toggle_analysis)
-        self.frame_advanced_options.hide()
-        self.frame_style.hide()
-        self.bt_advanced_options.clicked.connect(self.toggle_advanced_options)
-        self.bt_style_options.clicked.connect(self.toggle_style_options)
-
-        self.__initialize_slider_anomaly_threshold()
-        self.__initialize_slider_fill_percentage()
-        self.__initialize_slider_peak_threshold()
-        self.__initialize_slider_window_length()
-
-        self.cb_analysis_color.addItems([*COLORS.keys()])
-        self.cb_analysis_color.currentIndexChanged.connect(self.update_analysis_color)
-    
-        
-
-    
-    def update_main_image(self, image: np.ndarray) -> None:
-        image_resized = cv2.resize(image, (self.l_main.width(), self.l_main.height()), interpolation=cv2.INTER_LINEAR)
-        qimage = QImage(image_resized.data, self.l_main.width(), self.l_main.height(), 3 * self.l_main.width(), QImage.Format_RGB888)
-        self.l_main.setPixmap(QPixmap.fromImage(qimage))
-
-    
-    def update_sub_image(self, image: np.ndarray) -> None:
-        qimage = QImage(image.data, self.l_sub.width(), self.l_sub.height(), 3 * self.l_sub.width(), QImage.Format_RGB888)
-        self.l_sub.setPixmap(QPixmap.fromImage(qimage))
+        self._initialize_items()
 
 
 
-
-
-    def load_signal(self, signal_path: str, idx: str):
-        self.signal = load_full_ecg(signal_path, idx)[0]
-
-        signal_test = load_full_ecg("data/arrythmia_rates/", "111")[0]
-
-        self.signal_view = self.transformer._normalize_signal(signal_test)
-
-
-    def start_signal(self):
-        self.timer.start(3)
-
-    def stop_signal(self):
-        self.timer.stop()
-
-
-
-
-
-    def update_TEST(self):
-
-        #self.signal_handler.update_signal_frame(self.idx)
+    def loop_handler(self) -> None:
+        """
+        Main loop handler for updating the signal frames.
+        Iterates the signal frames and updates the main and sub images.
+        Stops the timer if the signal is finished.
+        """
         self.start_computation()
         with self.lock:
             self.update_main_image(self.signal_handler.get_signal_frame())
 
-
-        if not self.check_signal_status():
+        if not self.__check_signal_status():
             self.timer.stop()
         
         if self.signal_handler.sub_signal_frame is not None:
@@ -128,71 +54,171 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.idx += 1
 
 
-    def check_signal_status(self) -> bool:
-        return self.signal_handler.run_signal
+
+    def load_signal(self) -> None:
+        """
+        Loads the signal from the file.
+        """
+        dialog = QFileDialog()
+        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setNameFilter("ECG files (*.dat)")
+        dialog.exec()
+        if dialog.selectedFiles():
+            try:
+                print("Loading signal...")
+                print(dialog.selectedFiles()[0])
+                signal = load_signal_ecg(dialog.selectedFiles()[0])[0]
+                self.signal_handler = SignalHandler(signal, self.transformer, self.lock)
+                self.idx = 1
+
+                self.bt_start.setEnabled(True)
+            except Exception as e:
+                print(e)
+
     
 
-    def start_computation(self):
+    def start_computation(self) -> None:
+        """
+        Creates and starts a worker for the next frame computation.
+        """
         worker = ComputeNextFrame(self.signal_handler, self.idx)
         self.thread_pool.start(worker)
 
     
-    def toggle_analysis(self):
+
+    def update_main_image(self, image: np.ndarray) -> None:
+        """
+        Sets the given image in np.array format to the main frame.
+        """
+        image_resized = cv2.resize(image, (self.l_main.width(), self.l_main.height()), interpolation=cv2.INTER_LINEAR)
+        qimage = QImage(image_resized.data, self.l_main.width(), self.l_main.height(), 3 * self.l_main.width(), QImage.Format_RGB888)
+        self.l_main.setPixmap(QPixmap.fromImage(qimage))
+
+    
+
+    def update_sub_image(self, image: np.ndarray) -> None:
+        """
+        Sets the given image in np.array format to the sub frame.
+        """
+        qimage = QImage(image.data, self.l_sub.width(), self.l_sub.height(), 3 * self.l_sub.width(), QImage.Format_RGB888)
+        self.l_sub.setPixmap(QPixmap.fromImage(qimage))
+
+
+
+    def start_signal(self) -> None:
+        self.timer.start(3) # 3 ms interval (should be 2.77 ms for 360 Hz and 864 length signal)
+
+
+
+    def stop_signal(self) -> None:
+        self.timer.stop()
+
+
+
+    def toggle_analysis(self) -> None:
+        """
+        Turns on/off the analysis mode.
+        """
         self.signal_handler.toggle_analysis()
 
 
-    def toggle_advanced_options(self):
+
+    def toggle_advanced_options(self) -> None:
+        """
+        Hides/Shows the advanced options frame.
+        """
         if self.frame_advanced_options.isHidden():
             self.frame_advanced_options.show()
         else:
             self.frame_advanced_options.hide()
 
 
-    def toggle_style_options(self):
+
+    def toggle_style_options(self) -> None:
+        """
+        Hides/Shows the style options frame.
+        """
         if self.frame_style.isHidden():
             self.frame_style.show()
         else:
             self.frame_style.hide()
 
 
-    def update_anomaly_threshold(self, value: float):
+
+    def update_anomaly_threshold(self, value: float) -> None:
+        """
+        Updates the anomaly detection model threshold.
+        """
         new_threshold = DEFAULT_THRESHOLD * (100 + value) / 100
         self.signal_handler.set_model_threshold(new_threshold)
 
 
-    def update_fill_percentage(self, value: int):
+
+    def update_fill_percentage(self, value: int) -> None:
+        """
+        Updates the fill percentage of the sub frame.
+        Uses 3 steps: No fill, 50% fill, 100% fill.
+        """
         new_value = self.__cut_the_value(50, value)
         self.slider_fill_percentage.setValue(new_value)
         self.signal_handler.set_sub_frame_fill_percentage(new_value)
 
     
-    def update_analysis_color(self, *args):
+
+    def update_analysis_color(self, *args) -> None:
+        """
+        Updates the color of the analysis mode.
+        """
         color = COLORS[self.cb_analysis_color.currentText()]
         self.signal_handler.set_analyze_mode_color(color)
 
     
-    def update_peak_threshold(self, value: float):
+
+    def update_peak_threshold(self, value: float) -> None:
+        """
+        Updates the peak threshold value.
+        """
         new_threshold = self.__cut_the_value(5, value)
         self.slider_peak_threshold.setValue(new_threshold)
-        self.signal_handler.set_peak_finding_threshold(new_threshold)
-
-    
-    def update_window_length(self, value: int):
-        new_length = self.__cut_the_value(FRAME_SIZE // 4, value)
-        self.slider_window_length.setValue(new_length)
-        self.signal_handler.set_analyze_window_length(new_length)
+        self.signal_handler.set_peak_finding_threshold(new_threshold/100)
 
 
 
-    def __initialize_slider_fill_percentage(self):
+    def _initialize_items(self) -> None:
+        """
+        Initializes the items in the UI.
+        """
+        # sliders
+        self.__initialize_slider_anomaly_threshold()
+        self.__initialize_slider_fill_percentage()
+        self.__initialize_slider_peak_threshold()
+        # combobox
+        self.__initialize_combobox_analysis_color()
+        # buttons signals
+        self.bt_start.clicked.connect(self.start_signal)
+        self.bt_stop.clicked.connect(self.stop_signal)
+        self.bt_load.clicked.connect(self.load_signal)
+        self.bt_advanced_options.clicked.connect(self.toggle_advanced_options)
+        self.bt_style_options.clicked.connect(self.toggle_style_options)
+        self.checkbox_analysis.clicked.connect(self.toggle_analysis)
+        self.checkbox_analysis.setChecked(False)
+        # others
+        self.frame_advanced_options.hide()
+        self.frame_style.hide()
+        self.bt_start.setEnabled(False)
+
+
+
+    def __initialize_slider_fill_percentage(self) -> None:
         self.slider_fill_percentage.setSingleStep(50)
         self.slider_fill_percentage.setMinimum(0)
         self.slider_fill_percentage.setMaximum(100)
         self.slider_fill_percentage.setValue(100)
         self.slider_fill_percentage.valueChanged.connect(self.update_fill_percentage)
 
+
     
-    def __initialize_slider_anomaly_threshold(self):
+    def __initialize_slider_anomaly_threshold(self) -> None:
         self.slider_anomaly_threshold.setSingleStep(1)
         self.slider_anomaly_threshold.setMinimum(-10)
         self.slider_anomaly_threshold.setMaximum(10)
@@ -200,33 +226,36 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.slider_anomaly_threshold.valueChanged.connect(self.update_anomaly_threshold)
 
 
-    def __initialize_slider_peak_threshold(self):
+
+    def __initialize_slider_peak_threshold(self) -> None:
         self.slider_peak_threshold.setSingleStep(5)
         self.slider_peak_threshold.setMinimum(60)
         self.slider_peak_threshold.setMaximum(95)
         self.slider_peak_threshold.setValue(80)
         self.slider_peak_threshold.valueChanged.connect(self.update_peak_threshold)
 
+
     
-    def __initialize_slider_window_length(self):
-        self.slider_window_length.setSingleStep(FRAME_SIZE // 4)
-        self.slider_window_length.setMinimum(FRAME_SIZE // 4)
-        self.slider_window_length.setMaximum(FRAME_SIZE)
-        self.slider_window_length.setValue(FRAME_SIZE // 2)
-        self.slider_window_length.valueChanged.connect(self.update_window_length)
+    def __initialize_combobox_analysis_color(self) -> None:
+        self.cb_analysis_color.addItems([*COLORS.keys()])
+        self.cb_analysis_color.setCurrentText("Blue")
+        self.cb_analysis_color.currentIndexChanged.connect(self.update_analysis_color)
+
+    
+
+    def __check_signal_status(self) -> bool:
+        return self.signal_handler.run_signal
+
 
     
     def __cut_the_value(self, step: int, value: int) -> int:
+        """
+        Cuts the value to the nearest multiple of the step.
+        """
         if value % step <= step // 2:
             return value - value % step
         else:
             return value + step - value % step
-
-
-    
-
-
-    
 
 
 
@@ -234,10 +263,23 @@ class UserInterface(QMainWindow, Ui_MainWindow):
 
 
 class ComputeNextFrame(QRunnable):
+    """
+    Worker class for updating the signal frame.
+    Uses QRunnable for multithreading.
+    Simply runs the next frame computation in the signal handler.
+
+    Parameters
+    ----------
+    c_object : SignalHandler
+        The signal handler object.
+    idx : int
+        The index of the current frame.
+    """
     def __init__(self, c_object: SignalHandler, idx: int):
         super().__init__()
         self.engine = c_object
         self.idx = idx
+
 
     @Slot()
     def run(self):

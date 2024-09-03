@@ -31,6 +31,15 @@ def load_full_ecg(path: str, id: str) -> Tuple[np.ndarray, np.ndarray, list]:
 
 
 
+def load_signal_ecg(path: str) -> np.ndarray:
+    """
+    Loads the ECG signal from the given path.
+    """
+    record = wfdb.rdrecord(path)
+    return record.p_signal[:, 0] # not dat but hea and without the extension
+
+
+
 def convert_signal_to_image(signal: np.ndarray, peak_idx: int, h: int, w: int, color: tuple = (0, 255, 0)) -> np.ndarray:
     """
     Converts the given signal to an image.

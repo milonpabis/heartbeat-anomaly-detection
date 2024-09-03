@@ -153,29 +153,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.frame_8)
 
-        self.frame = QFrame(self.frame_advanced_options)
-        self.frame.setObjectName(u"frame")
-        self.frame.setMinimumSize(QSize(150, 0))
-        self.frame.setMaximumSize(QSize(150, 16777215))
-        self.frame.setFrameShape(QFrame.NoFrame)
-        self.frame.setFrameShadow(QFrame.Raised)
-        self.verticalLayout_7 = QVBoxLayout(self.frame)
-        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.label_3 = QLabel(self.frame)
-        self.label_3.setObjectName(u"label_3")
-
-        self.verticalLayout_7.addWidget(self.label_3)
-
-        self.slider_window_length = QSlider(self.frame)
-        self.slider_window_length.setObjectName(u"slider_window_length")
-        self.slider_window_length.setOrientation(Qt.Horizontal)
-        self.slider_window_length.setTickPosition(QSlider.TicksBelow)
-
-        self.verticalLayout_7.addWidget(self.slider_window_length)
-
-
-        self.verticalLayout_4.addWidget(self.frame)
-
         self.checkbox_analysis = QCheckBox(self.frame_advanced_options)
         self.checkbox_analysis.setObjectName(u"checkbox_analysis")
         self.checkbox_analysis.setMinimumSize(QSize(150, 0))
@@ -252,6 +229,10 @@ class Ui_MainWindow(object):
 
         self.slider_fill_percentage = QSlider(self.frame_13)
         self.slider_fill_percentage.setObjectName(u"slider_fill_percentage")
+        self.slider_fill_percentage.setMaximum(100)
+        self.slider_fill_percentage.setSingleStep(50)
+        self.slider_fill_percentage.setPageStep(50)
+        self.slider_fill_percentage.setSliderPosition(100)
         self.slider_fill_percentage.setOrientation(Qt.Horizontal)
 
         self.verticalLayout_10.addWidget(self.slider_fill_percentage)
@@ -354,7 +335,6 @@ class Ui_MainWindow(object):
         self.l_main.setText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Anomaly Threshold", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Peak Height Threshold", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Search Window Length", None))
         self.checkbox_analysis.setText(QCoreApplication.translate("MainWindow", u"Analysis Mode", None))
         self.l_sub.setText("")
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Difference Fill Percentage", None))
