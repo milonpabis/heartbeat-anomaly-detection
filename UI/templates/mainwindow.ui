@@ -316,6 +316,47 @@ border: 1px solid white;E</string>
               </widget>
              </item>
              <item>
+              <widget class="QFrame" name="frame">
+               <property name="minimumSize">
+                <size>
+                 <width>150</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_7">
+                <item>
+                 <widget class="QLabel" name="label_3">
+                  <property name="text">
+                   <string>Max Peaks per Window</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSlider" name="slider_max_peaks">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="tickPosition">
+                   <enum>QSlider::TicksBelow</enum>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
               <widget class="QCheckBox" name="checkbox_analysis">
                <property name="minimumSize">
                 <size>
@@ -625,21 +666,71 @@ border: 1px solid white;
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionLoad_Signal"/>
+    <addaction name="actionStart_Signal"/>
+    <addaction name="actionStop_Signal"/>
+    <addaction name="separator"/>
+    <addaction name="actionStyle_Options"/>
+    <addaction name="actionAdvanced_Options"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuTheme">
     <property name="title">
      <string>Settings</string>
     </property>
+    <addaction name="actionAnalysis_Color"/>
+    <addaction name="actionAnalysis_Color_2"/>
    </widget>
-   <widget class="QMenu" name="menuHelp">
+   <widget class="QMenu" name="menuAbout">
     <property name="title">
-     <string>Help</string>
+     <string>About</string>
     </property>
+    <addaction name="actionHow_Does_It_Work"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTheme"/>
-   <addaction name="menuHelp"/>
+   <addaction name="menuAbout"/>
   </widget>
+  <action name="actionLoad_Signal">
+   <property name="text">
+    <string>Load Signal</string>
+   </property>
+  </action>
+  <action name="actionAnalysis_Color">
+   <property name="text">
+    <string>Analysis Mode</string>
+   </property>
+  </action>
+  <action name="actionAnalysis_Color_2">
+   <property name="text">
+    <string>Analysis Color</string>
+   </property>
+  </action>
+  <action name="actionStart_Signal">
+   <property name="text">
+    <string>Start Signal</string>
+   </property>
+  </action>
+  <action name="actionStop_Signal">
+   <property name="text">
+    <string>Stop Signal</string>
+   </property>
+  </action>
+  <action name="actionStyle_Options">
+   <property name="text">
+    <string>Show Style Options</string>
+   </property>
+  </action>
+  <action name="actionAdvanced_Options">
+   <property name="text">
+    <string>Advanced Options</string>
+   </property>
+  </action>
+  <action name="actionHow_Does_It_Work">
+   <property name="text">
+    <string>How Does It Work?</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

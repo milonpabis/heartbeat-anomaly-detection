@@ -144,6 +144,13 @@ class SignalHandler:
         except ValueError:
             pass
 
+    
+    def set_max_peaks(self, value: int) -> None:
+        try:
+            self.user_settings.set_max_peaks(value)
+        except ValueError:
+            pass
+
 
 
 

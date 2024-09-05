@@ -9,6 +9,7 @@ class UserSettings:
         self.analyze_mode = False
         self.anomaly_threshold = DEFAULT_THRESHOLD
         self.peak_finding_threshold = DEFAULT_PEAK_THRESHOLD
+        self.max_peaks = DEFAULT_MAX_PEAKS
 
         # STYLE SETTINGS
         self.sub_frame_fill_percentage = 100
@@ -45,4 +46,10 @@ class UserSettings:
         if len(color) != 3:
             raise ValueError('Color tuple must have 3 values.')
         self.analyze_mode_color = color
+
+    
+    def set_max_peaks(self, value: int) -> None:
+        if value < 1 or value > 5:
+            raise ValueError('Max peaks value is out of bounds. [1, 5]')
+        self.max_peaks = value
 

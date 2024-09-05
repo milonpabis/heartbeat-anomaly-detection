@@ -26,6 +26,22 @@ class Ui_MainWindow(object):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(900, 600)
+        self.actionLoad_Signal = QAction(MainWindow)
+        self.actionLoad_Signal.setObjectName(u"actionLoad_Signal")
+        self.actionAnalysis_Color = QAction(MainWindow)
+        self.actionAnalysis_Color.setObjectName(u"actionAnalysis_Color")
+        self.actionAnalysis_Color_2 = QAction(MainWindow)
+        self.actionAnalysis_Color_2.setObjectName(u"actionAnalysis_Color_2")
+        self.actionStart_Signal = QAction(MainWindow)
+        self.actionStart_Signal.setObjectName(u"actionStart_Signal")
+        self.actionStop_Signal = QAction(MainWindow)
+        self.actionStop_Signal.setObjectName(u"actionStop_Signal")
+        self.actionStyle_Options = QAction(MainWindow)
+        self.actionStyle_Options.setObjectName(u"actionStyle_Options")
+        self.actionAdvanced_Options = QAction(MainWindow)
+        self.actionAdvanced_Options.setObjectName(u"actionAdvanced_Options")
+        self.actionHow_Does_It_Work = QAction(MainWindow)
+        self.actionHow_Does_It_Work.setObjectName(u"actionHow_Does_It_Work")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.centralwidget.setMinimumSize(QSize(900, 0))
@@ -152,6 +168,29 @@ class Ui_MainWindow(object):
 
 
         self.verticalLayout_4.addWidget(self.frame_8)
+
+        self.frame = QFrame(self.frame_advanced_options)
+        self.frame.setObjectName(u"frame")
+        self.frame.setMinimumSize(QSize(150, 0))
+        self.frame.setMaximumSize(QSize(150, 16777215))
+        self.frame.setFrameShape(QFrame.NoFrame)
+        self.frame.setFrameShadow(QFrame.Raised)
+        self.verticalLayout_7 = QVBoxLayout(self.frame)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.label_3 = QLabel(self.frame)
+        self.label_3.setObjectName(u"label_3")
+
+        self.verticalLayout_7.addWidget(self.label_3)
+
+        self.slider_max_peaks = QSlider(self.frame)
+        self.slider_max_peaks.setObjectName(u"slider_max_peaks")
+        self.slider_max_peaks.setOrientation(Qt.Horizontal)
+        self.slider_max_peaks.setTickPosition(QSlider.TicksBelow)
+
+        self.verticalLayout_7.addWidget(self.slider_max_peaks)
+
+
+        self.verticalLayout_4.addWidget(self.frame)
 
         self.checkbox_analysis = QCheckBox(self.frame_advanced_options)
         self.checkbox_analysis.setObjectName(u"checkbox_analysis")
@@ -317,13 +356,23 @@ class Ui_MainWindow(object):
         self.menuFile.setObjectName(u"menuFile")
         self.menuTheme = QMenu(self.menuBar)
         self.menuTheme.setObjectName(u"menuTheme")
-        self.menuHelp = QMenu(self.menuBar)
-        self.menuHelp.setObjectName(u"menuHelp")
+        self.menuAbout = QMenu(self.menuBar)
+        self.menuAbout.setObjectName(u"menuAbout")
         MainWindow.setMenuBar(self.menuBar)
 
         self.menuBar.addAction(self.menuFile.menuAction())
         self.menuBar.addAction(self.menuTheme.menuAction())
-        self.menuBar.addAction(self.menuHelp.menuAction())
+        self.menuBar.addAction(self.menuAbout.menuAction())
+        self.menuFile.addAction(self.actionLoad_Signal)
+        self.menuFile.addAction(self.actionStart_Signal)
+        self.menuFile.addAction(self.actionStop_Signal)
+        self.menuFile.addSeparator()
+        self.menuFile.addAction(self.actionStyle_Options)
+        self.menuFile.addAction(self.actionAdvanced_Options)
+        self.menuFile.addSeparator()
+        self.menuTheme.addAction(self.actionAnalysis_Color)
+        self.menuTheme.addAction(self.actionAnalysis_Color_2)
+        self.menuAbout.addAction(self.actionHow_Does_It_Work)
 
         self.retranslateUi(MainWindow)
 
@@ -332,9 +381,18 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.actionLoad_Signal.setText(QCoreApplication.translate("MainWindow", u"Load Signal", None))
+        self.actionAnalysis_Color.setText(QCoreApplication.translate("MainWindow", u"Analysis Mode", None))
+        self.actionAnalysis_Color_2.setText(QCoreApplication.translate("MainWindow", u"Analysis Color", None))
+        self.actionStart_Signal.setText(QCoreApplication.translate("MainWindow", u"Start Signal", None))
+        self.actionStop_Signal.setText(QCoreApplication.translate("MainWindow", u"Stop Signal", None))
+        self.actionStyle_Options.setText(QCoreApplication.translate("MainWindow", u"Show Style Options", None))
+        self.actionAdvanced_Options.setText(QCoreApplication.translate("MainWindow", u"Advanced Options", None))
+        self.actionHow_Does_It_Work.setText(QCoreApplication.translate("MainWindow", u"How Does It Work?", None))
         self.l_main.setText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Anomaly Threshold", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Peak Height Threshold", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"Max Peaks per Window", None))
         self.checkbox_analysis.setText(QCoreApplication.translate("MainWindow", u"Analysis Mode", None))
         self.l_sub.setText("")
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Difference Fill Percentage", None))
@@ -346,6 +404,6 @@ class Ui_MainWindow(object):
         self.bt_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuTheme.setTitle(QCoreApplication.translate("MainWindow", u"Settings", None))
-        self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))
+        self.menuAbout.setTitle(QCoreApplication.translate("MainWindow", u"About", None))
     # retranslateUi
 

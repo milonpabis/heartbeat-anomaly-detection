@@ -61,13 +61,12 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         """
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setNameFilter("ECG files (*.dat)")
+        dialog.setNameFilter("ECG files (*.hea)")
         dialog.exec()
         if dialog.selectedFiles():
             try:
-                print("Loading signal...")
-                print(dialog.selectedFiles()[0])
-                signal = load_signal_ecg(dialog.selectedFiles()[0])[0]
+                file_name = dialog.selectedFiles()[0].split(".")[0]
+                signal = load_signal_ecg(file_name)
                 self.signal_handler = SignalHandler(signal, self.transformer, self.lock)
                 self.idx = 1
 
@@ -182,6 +181,13 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.slider_peak_threshold.setValue(new_threshold)
         self.signal_handler.set_peak_finding_threshold(new_threshold/100)
 
+    
+    def update_max_peaks(self, value: int) -> None:
+        """
+        Updates the maximum number of peaks to be found.
+        """
+        self.signal_handler.set_max_peaks(value)
+
 
 
     def _initialize_items(self) -> None:
@@ -192,6 +198,7 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.__initialize_slider_anomaly_threshold()
         self.__initialize_slider_fill_percentage()
         self.__initialize_slider_peak_threshold()
+        self.__initialize_slider_max_peaks()
         # combobox
         self.__initialize_combobox_analysis_color()
         # buttons signals
@@ -233,6 +240,14 @@ class UserInterface(QMainWindow, Ui_MainWindow):
         self.slider_peak_threshold.setMaximum(95)
         self.slider_peak_threshold.setValue(80)
         self.slider_peak_threshold.valueChanged.connect(self.update_peak_threshold)
+
+
+    def __initialize_slider_max_peaks(self) -> None:
+        self.slider_max_peaks.setSingleStep(1)
+        self.slider_max_peaks.setMinimum(1)
+        self.slider_max_peaks.setMaximum(5)
+        self.slider_max_peaks.setValue(2)
+        self.slider_max_peaks.valueChanged.connect(self.update_max_peaks)
 
 
     
