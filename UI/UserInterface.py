@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QPixmap, QImage, QIcon
 from PySide6.QtCore import QTimer, QRunnable, Slot, QThreadPool
 from UI.templates.MainWindow import Ui_MainWindow
 
@@ -21,6 +21,8 @@ class UserInterface(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QIcon("UI/other/icon.png"))
+        self.setWindowTitle("ECG Anomaly Detection")
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.loop_handler)

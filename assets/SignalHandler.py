@@ -35,7 +35,6 @@ class SignalHandler:
         self.ii = 0 # index for window analysis
 
 
-
     
     def update_signal_frame(self, idx: int) -> np.ndarray:
             if idx < len(self.signal_view):
@@ -60,17 +59,14 @@ class SignalHandler:
         # transforming only the analysis window
         signal_window = self.transformer.transform_signal(self.signal[self.ii*self.window_length:(self.ii+1)*self.window_length])
         threshold = self.user_settings.peak_finding_threshold
-        peaks = find_peaks(signal_window, height=threshold)[0]
-                        
-        if len(peaks) > 1 and abs(peaks[0] - peaks[1]) < 10: # bugs were here so temporary solution
-            peaks = np.delete(peaks, 1)
+        max_peaks = self.user_settings.max_peaks
+        peaks = self._get_n_highest_peaks(signal_window, max_peaks, threshold, 10)
 
         if self._get_analyze_state():
             self._draw_found_peaks(peaks)
 
         self.make_predictions(peaks)
         
-
 
     
     def make_predictions(self, peaks: np.ndarray) -> np.ndarray:
@@ -217,6 +213,13 @@ class SignalHandler:
 
     def _get_analyze_state(self):
         return self.user_settings.analyze_mode
+    
+
+
+    def _get_n_highest_peaks(self, signal, n: int, height: float, distance: int) -> np.ndarray:
+        res = find_peaks(signal, height=height, distance=distance)
+        n_highest = np.argsort(res[1]["peak_heights"])[-n:]
+        return res[0][n_highest]
     
     
     
