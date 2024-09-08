@@ -11,8 +11,8 @@ from assets.settings import *
 from assets.utils import map_to_rgb
 from models.AnomalyDetector import AnomalyDetector
 
-
 MODEL_DEFAULT = AnomalyDetector("models/final_model.keras")
+
 
 
 
@@ -33,6 +33,8 @@ class SignalHandler:
 
         self.window_length = FRAME_SIZE // 2 # length of window to be analyzed in terms of peaks
         self.ii = 0 # index for window analysis
+
+        self.__warm_up_model()
 
 
     
@@ -70,8 +72,8 @@ class SignalHandler:
 
     
     def make_predictions(self, peaks: np.ndarray) -> np.ndarray:
-        start_time = datetime.now()
         if len(peaks) > 0:
+            start_time = datetime.now()
             peaks_results = []
 
             for p in peaks:
@@ -220,6 +222,11 @@ class SignalHandler:
         res = find_peaks(signal, height=height, distance=distance)
         n_highest = np.argsort(res[1]["peak_heights"])[-n:]
         return res[0][n_highest]
+    
+
+    def __warm_up_model(self):
+        self.model.predict(np.zeros((FRAME_SIZE,)), 0.5)
+        self.model.predict(np.ones((FRAME_SIZE,)), 0.5)
     
     
     
